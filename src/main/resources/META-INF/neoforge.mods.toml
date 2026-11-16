@@ -1,0 +1,33 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "GPL-3.0-or-later"
+
+[[mods]]
+modId = "compacttunnels"
+version = "${mod_version}"
+displayName = "Compact Tunnels"
+authors = "kirjorjos"
+description = '''
+Tunnels for Compact Machines 7.
+'''
+
+[[dependencies.compacttunnels]]
+modId = "neoforge"
+type = "required"
+versionRange = "[${neo_version},)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.compacttunnels]]
+modId = "minecraft"
+type = "required"
+versionRange = "[${minecraft_version},1.22)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.compacttunnels]]
+modId = "compactmachines"
+type = "required"
+versionRange = "[0,)"
+ordering = "NONE"
+side = "BOTH"
