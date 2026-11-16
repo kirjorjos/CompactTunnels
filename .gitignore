@@ -1,0 +1,30 @@
+.*
+!.gitignore
+!.github/
+
+# Gradle
+.gradle/
+build/
+out/
+bin/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# The Gradle wrapper jar is the one binary that belongs in the repository, so it
+# is re-included after the *.jar rule that would otherwise swallow it.
+!gradle/wrapper/gradle-wrapper.jar
+
+# NeoForge dev runs (worlds, logs, configs)
+run/
+
+# IDE project files (dot-prefixed ones are covered by `.*`)
+.settings/
+.classpath
+.project
+.factorypath
