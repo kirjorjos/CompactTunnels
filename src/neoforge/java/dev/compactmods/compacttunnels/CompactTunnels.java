@@ -12,7 +12,7 @@ import org.slf4j.Logger;
  */
 @Mod(TunnelConstants.MOD_ID)
 public final class CompactTunnels {
-    private static final Logger LOGGER = LogUtils.getLogger();
+  private static final Logger LOGGER = LogUtils.getLogger();
 
-    public CompactTunnels(IEventBus modBus, ModContainer container) { }
+  public CompactTunnels(IEventBus modBus, ModContainer container) {}
 }
