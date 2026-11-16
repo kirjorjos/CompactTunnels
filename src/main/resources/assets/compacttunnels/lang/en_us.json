@@ -1,3 +1,17 @@
 {
-  "screen.compacttunnels.dev_world": "Dev World"
+  "screen.compacttunnels.dev_world": "Dev World",
+  "block.compacttunnels.capability_tunnel": "Capability Tunnel",
+  "compacttunnels.tunnel.no_free_sides": "All six sides of this machine already have a tunnel",
+  "compacttunnels.tunnel.rotated": "Rotated to %1$s (%2$s/%3$s used)",
+  "compacttunnels.tunnel.placed": "Targeting %1$s face (%2$s/%3$s used)",
+  "compacttunnels.tunnel.freed": "%1$s freed (%2$s/%3$s used)",
+  "item.compacttunnels.capability_tunnel.side": "Side: %s",
+  "item.compacttunnels.capability_tunnel.first_free": "Side: first free side",
+  "item.compacttunnels.capability_tunnel.limit": "One tunnel per machine side, six per machine",
+  "compacttunnels.side.north": "North",
+  "compacttunnels.side.east": "East",
+  "compacttunnels.side.south": "South",
+  "compacttunnels.side.west": "West",
+  "compacttunnels.side.up": "Up",
+  "compacttunnels.side.down": "Down"
 }
