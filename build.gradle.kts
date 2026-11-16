@@ -1,6 +1,7 @@
 plugins {
     java
     id("net.neoforged.moddev") version "2.0.148"
+    id("com.diffplug.spotless") version "8.10.2"
 }
 
 val modId = providers.gradleProperty("mod_id").get()
@@ -84,6 +85,17 @@ modules.forEach { module -> neoForge.addModdingDependenciesTo(module) }
 dependencies {
     implementation(compactMachinesMod)
     compileOnly(compactMachinesApi)
+}
+
+spotless {
+    java {
+        googleJavaFormat("1.28.0").skipJavadocFormatting()
+        removeUnusedImports()
+        importOrder()
+        formatAnnotations()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }
 
 tasks.processResources {
