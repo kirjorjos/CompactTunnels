@@ -6,8 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); ver
 
 ## [Unreleased] — 0.1.0
 
-First working tunnel: one block, placed into a room wall, that wires the item handler of the far
-side of a compact machine's face to the room behind it.
+First working tunnel: one block, placed into a room wall, that wires the item fluid and energy handlers of the far side of a compact machine's face to the room behind it.
 
 ### Added
 
@@ -27,13 +26,21 @@ side of a compact machine's face to the room behind it.
 
 **What a wire tunnel exposes**
 
-- Item handlers only, for now: `Capabilities.ItemHandler.BLOCK`, sided queries only (an unsided
-  query gets nothing).
+- Item, fluid and energy handlers: `Capabilities.ItemHandler.BLOCK`,
+  `Capabilities.FluidHandler.BLOCK` and `Capabilities.EnergyStorage.BLOCK`, sided queries only (an
+  unsided query gets nothing). Energy is handed out bare like the others, so a cable's own
+  throughput rule still applies.
 - The room end returns the handler of the block on the inside of the wall it points at; the machine
   face returns the handler of the block inside the room on that side. The far handler is handed out
   bare and re-resolved per query, never cached.
 - The index is keyed by room code, so either end can find the other without the far block entity
   being loaded. Claims are rebuilt from the tunnel block entities when their chunk loads.
+- Reconnections cross the wire in both directions: a block placed or broken next to the machine's
+  outside face invalidates the room end, and a change inside the room next to the tunnel
+  invalidates the machine face. Each end is invalidated *and* announced as a neighbour change,
+  because a pipe or cable redraws its connection shape from the neighbour update rather than from a
+  dropped cache entry — so the end that was already there reconnects instead of staying visibly
+  unconnected until it is replaced.
 - A far side that is not loaded answers nothing instead of loading it, and no tunnel code forces a
   chunk to load or generate.
 
@@ -51,11 +58,14 @@ side of a compact machine's face to the room behind it.
 - Every placement, rotation and pick-up reports the side and the post-action count, e.g.
   `Rotated to East (2/6 used)` and `East freed (1/6 used)`.
 
-**Shutdown workaround**
+**Shutdown diagnostics**
 
-- `ChunkUnloadSettle` runs on the server-stopping event: it drops the level's closing tickets, clears
-  the queued chunk unloads, and keeps a watcher that lifts and restores those queue entries so the
-  shutdown loop is not stuck spinning a core. This does not make the shutdown finish (see below).
+- `ChunkUnloadSettle` runs on the server-stopping event, drops the level's closing tickets, and logs
+  the chunk map's unload queue, pending unloads, `toDrop`, loaded holders, holders still holding
+  generation refs, and whether any tickets remain. It reads and reports only. Clearing those
+  containers does not settle the shutdown loop: a chunk holder leaves the map only through `toDrop`,
+  so emptying it strands every loaded holder instead and keeps `ChunkMap.hasWork()` true for good.
+  This does not make the shutdown finish (see below).
 
 ### Known issues
 
@@ -73,6 +83,10 @@ side of a compact machine's face to the room behind it.
     that would drive it, so the state is stationary rather than slow.
   - A tunnel is what makes it reachable: without one, the room is not left in that state when the
     player quits.
-  - Current status: the workaround above removes the CPU spin (the server thread idles in the loop
-    instead of pegging a core) but the loop still never exits. A mixin fix is accepted; it is not
-    implemented yet. See `.notes/tunnel-addon-decisions.md`.
+  - Current status: the loop never exits. A thread dump of a hung run shows the server thread parked
+    inside `MinecraftServer.stopServer` at `waitUntilNextTick` — still in the flush loop, with no
+    exception and no crash — while the heap still held 1221 `ChunkHolder`s. That is exactly the 1221
+    positions the earlier cleanup cleared out of `toDrop`, which is the only path that removes a
+    holder from the map, so `hasWork()` (which includes `!updatingChunkMap.isEmpty()`) can never
+    become false again. A mixin fix is accepted; it is not implemented yet. See
+    `.notes/tunnel-addon-decisions.md`.

@@ -172,6 +172,11 @@ public class CapabilityTunnelBlock extends Block implements EntityBlock {
     super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
 
     invalidate(level, pos);
+
+    if (level instanceof ServerLevel serverLevel) {
+      invalidateMachine(
+          serverLevel, RoomMachineIndex.machineAt(serverLevel, pos, state.getValue(FACING)));
+    }
   }
 
   @Override
@@ -244,6 +249,9 @@ public class CapabilityTunnelBlock extends Block implements EntityBlock {
     final ServerLevel machineLevel = level.getServer().getLevel(machine.dimension());
     if (machineLevel != null && machineLevel.isLoaded(machine.pos())) {
       machineLevel.invalidateCapabilities(machine.pos());
+
+      machineLevel.updateNeighborsAt(
+          machine.pos(), machineLevel.getBlockState(machine.pos()).getBlock());
     }
   }
 }
