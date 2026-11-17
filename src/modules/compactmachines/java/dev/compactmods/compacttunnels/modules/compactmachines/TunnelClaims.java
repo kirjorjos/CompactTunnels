@@ -12,6 +12,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 
 @EventBusSubscriber(modid = TunnelConstants.MOD_ID)
@@ -27,6 +28,10 @@ public final class TunnelClaims {
 
   private static final Map<String, Map<Direction, GlobalPos>> BY_ROOM = new HashMap<>();
   private static final Map<GlobalPos, Claim> BY_TUNNEL = new HashMap<>();
+
+  private static final Map<GlobalPos, GlobalPos> BY_OUTSIDE = new HashMap<>();
+
+  private static boolean notifying;
 
   private TunnelClaims() {}
 
@@ -111,6 +116,14 @@ public final class TunnelClaims {
     return claimed == null ? null : claimed.get(side);
   }
 
+  static void bindOutside(GlobalPos outside, GlobalPos tunnel) {
+    BY_OUTSIDE.put(outside, tunnel);
+  }
+
+  @Nullable static GlobalPos tunnelForOutside(GlobalPos outside) {
+    return BY_OUTSIDE.get(outside);
+  }
+
   static void claim(String roomCode, Direction side, GlobalPos tunnel) {
     release(tunnel);
     BY_ROOM.computeIfAbsent(roomCode, ignored -> new EnumMap<>(Direction.class)).put(side, tunnel);
@@ -126,6 +139,8 @@ public final class TunnelClaims {
   }
 
   static void release(GlobalPos tunnel) {
+    BY_OUTSIDE.values().removeIf(tunnel::equals);
+
     final Claim claim = BY_TUNNEL.remove(tunnel);
     if (claim == null) {
       return;
@@ -170,8 +185,36 @@ public final class TunnelClaims {
   }
 
   @SubscribeEvent
+  public static void onNeighborNotify(BlockEvent.NeighborNotifyEvent event) {
+    if (notifying || !(event.getLevel() instanceof ServerLevel level)) {
+      return;
+    }
+
+    final GlobalPos tunnel = tunnelForOutside(GlobalPos.of(level.dimension(), event.getPos()));
+    if (tunnel == null) {
+      return;
+    }
+
+    final ServerLevel tunnelLevel = level.getServer().getLevel(tunnel.dimension());
+    if (tunnelLevel == null || !tunnelLevel.isLoaded(tunnel.pos())) {
+      return;
+    }
+
+    notifying = true;
+    try {
+      tunnelLevel.invalidateCapabilities(tunnel.pos());
+
+      tunnelLevel.updateNeighborsAt(
+          tunnel.pos(), tunnelLevel.getBlockState(tunnel.pos()).getBlock());
+    } finally {
+      notifying = false;
+    }
+  }
+
+  @SubscribeEvent
   public static void onServerStopping(ServerStoppingEvent event) {
     BY_ROOM.clear();
     BY_TUNNEL.clear();
+    BY_OUTSIDE.clear();
   }
 }

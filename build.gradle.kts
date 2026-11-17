@@ -8,6 +8,8 @@ val modId = providers.gradleProperty("mod_id").get()
 val modVersion = providers.gradleProperty("mod_version").get()
 val minecraftVersion = providers.gradleProperty("minecraft_version").get()
 val neoVersion = providers.gradleProperty("neo_version").get()
+val mekanismVersion = providers.gradleProperty("mekanism_version").get()
+val jeiVersion = providers.gradleProperty("jei_version").get()
 
 group = "dev.compactmods.$modId"
 version = modVersion
@@ -84,6 +86,21 @@ repositories {
             includeGroup("dev.compactmods.compactmachines")
         }
     }
+
+    maven("https://modmaven.dev") {
+        name = "ModMaven"
+        content {
+            includeGroup("mekanism")
+        }
+    }
+
+    maven("https://maven.blamejared.com") {
+        name = "BlameJared"
+        content {
+            includeGroup("mezz.jei")
+            includeGroup("net.mezzdev.config")
+        }
+    }
 }
 
 val compactMachinesMod = fileTree("libs") { include("compactmachines*.jar") }
@@ -115,6 +132,9 @@ modules.forEach { module -> neoForge.addModdingDependenciesTo(module) }
 dependencies {
     implementation(compactMachinesMod)
     compileOnly(compactMachinesApi)
+
+    runtimeOnly("mekanism:Mekanism:$mekanismVersion")
+    runtimeOnly("mezz.jei:jei-1.21.1-neoforge:$jeiVersion")
 }
 
 val compactMachinesVersion =

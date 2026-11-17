@@ -4,6 +4,9 @@
   - Added to creative menu
   - Added item support
   - Item form holds side last set in NBT
+- Added fluid and energy support to the tunnel
+  - Ensured normal limits still apply for energy and fluid transfer
+  - Placed block against a tunnel or machine face updates the tunneled side
 - Fixed world save bug causing chunks to never finish unloading
 - Set tunnels to claim a side of the machine for a 1:1 correspondence
   - Picks first free side on place, failing to place if no free sides remaining

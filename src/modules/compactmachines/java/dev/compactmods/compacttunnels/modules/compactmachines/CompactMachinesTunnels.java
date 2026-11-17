@@ -84,6 +84,26 @@ public final class CompactMachinesTunnels {
         Capabilities.ItemHandler.BLOCK,
         Machines.BlockEntities.MACHINE.get(),
         MachineOutsideEnd::itemHandler);
+
+    event.registerBlockEntity(
+        Capabilities.FluidHandler.BLOCK,
+        CAPABILITY_TUNNEL_ENTITY.get(),
+        (blockEntity, side) -> side == null ? null : blockEntity.farSideFluidHandler());
+
+    event.registerBlockEntity(
+        Capabilities.FluidHandler.BLOCK,
+        Machines.BlockEntities.MACHINE.get(),
+        MachineOutsideEnd::fluidHandler);
+
+    event.registerBlockEntity(
+        Capabilities.EnergyStorage.BLOCK,
+        CAPABILITY_TUNNEL_ENTITY.get(),
+        (blockEntity, side) -> side == null ? null : blockEntity.farSideEnergyHandler());
+
+    event.registerBlockEntity(
+        Capabilities.EnergyStorage.BLOCK,
+        Machines.BlockEntities.MACHINE.get(),
+        MachineOutsideEnd::energyHandler);
   }
 
   private static void addToCreativeTab(BuildCreativeModeTabContentsEvent event) {
