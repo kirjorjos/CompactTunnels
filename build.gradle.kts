@@ -43,15 +43,45 @@ sourceSets.main {
     }
 }
 
+val dotEnv: Map<String, String> = layout.projectDirectory.file(".env").asFile.let { file ->
+    if (!file.isFile) {
+        emptyMap()
+    } else {
+        file.readLines()
+            .map(String::trim)
+            .filter { it.isNotEmpty() && !it.startsWith("#") && '=' in it }
+            .associate { line ->
+                line.substringBefore('=').trim() to
+                    line.substringAfter('=').trim().removeSurrounding("\"").removeSurrounding("'")
+            }
+    }
+}
+
+fun credential(property: String, vararg names: String): String? =
+    providers.gradleProperty(property).orNull
+        ?: names.firstNotNullOfOrNull { name ->
+            dotEnv[name]?.takeIf { it.isNotEmpty() }
+                ?: System.getenv(name)?.takeIf { it.isNotEmpty() }
+        }
+
 repositories {
     maven("https://maven.pkg.github.com/compactmods/compactmachines") {
         name = "CompactMachinesPackages"
         content {
+            // includeGroup is an exact match, so the machine packages need naming too.
             includeGroup("dev.compactmods")
+            includeGroup("dev.compactmods.compactmachines")
         }
         credentials {
-            username = System.getenv("MAVEN_USERNAME")
-            password = System.getenv("MAVEN_KEY")
+            username = credential("gpr.user", "MAVEN_USERNAME", "GITHUB_USER")
+            password = credential("gpr.key", "MAVEN_KEY", "GITHUB_TOKEN")
+        }
+    }
+
+    mavenLocal {
+        content {
+            includeGroup("dev.compactmods")
+            includeGroup("dev.compactmods.compactmachines")
         }
     }
 }
@@ -86,6 +116,80 @@ dependencies {
     implementation(compactMachinesMod)
     compileOnly(compactMachinesApi)
 }
+
+val compactMachinesVersion =
+    providers.gradleProperty("compactmachines_version").getOrElse("7.0.81")
+
+val devDeps = configurations.create("devDeps") {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = false
+}
+
+dependencies {
+    devDeps("dev.compactmods.compactmachines:compactmachines-neoforge:$compactMachinesVersion")
+}
+
+val ensureDevDeps = tasks.register("ensureDevDeps") {
+    group = "build"
+    description = "Downloads the Compact Machines dev jars into libs/ when they are missing."
+
+    val libsDir = layout.projectDirectory.dir("libs")
+    val downloaded = devDeps.incoming.artifactView { isLenient = true }.files
+    val modCoordinate =
+        "dev.compactmods.compactmachines:compactmachines-neoforge:$compactMachinesVersion"
+
+    doLast {
+        fun jarsWithPrefix(prefix: String) =
+            project.fileTree(libsDir) { include("$prefix*.jar") }.files
+
+        fun unpackApi(modJar: File): File? {
+            val nested =
+                project.zipTree(modJar)
+                    .matching { include("META-INF/jarjar/*core-api*.jar") }
+                    .files
+                    .firstOrNull() ?: return null
+
+            val target = libsDir.file("core-api-$compactMachinesVersion.jar").asFile
+            target.parentFile.mkdirs()
+            nested.copyTo(target, overwrite = true)
+            return target
+        }
+
+        val modJar =
+            jarsWithPrefix("compactmachines").minByOrNull { it.name }
+                ?: downloaded.files.firstOrNull {
+                    it.name.startsWith("compactmachines") && it.name.endsWith(".jar")
+                }
+                ?: throw GradleException(
+                    "No compactmachines*.jar in libs/, and $modCoordinate could not be downloaded. " +
+                        "Version $compactMachinesVersion has to exist in the " +
+                        "CompactMachinesPackages repository on GitHub Packages, so check that it " +
+                        "is a released 1.21.1 build, that the network is reachable, and that " +
+                        "MAVEN_USERNAME/MAVEN_KEY (or GITHUB_USER/GITHUB_TOKEN) are set with the " +
+                        "read:packages scope."
+                )
+
+        if (modJar.parentFile != libsDir.asFile) {
+            modJar.copyTo(libsDir.file(modJar.name).asFile, overwrite = true)
+            logger.lifecycle("Downloaded ${modJar.name} into libs/")
+        }
+
+        if (jarsWithPrefix("core-api").isEmpty()) {
+            val apiJar =
+                unpackApi(modJar)
+                    ?: throw GradleException(
+                        "No core-api*.jar in libs/, and ${modJar.name} contains no nested Core API " +
+                            "jar to unpack. Put the core-api jar matching $compactMachinesVersion " +
+                            "into libs/ manually."
+                    )
+            logger.lifecycle("Extracted ${apiJar.name} from ${modJar.name} into libs/")
+        }
+    }
+}
+
+tasks.matching { it.name in setOf("compileJava", "runClient", "runServer", "build") }
+    .configureEach { dependsOn(ensureDevDeps) }
 
 spotless {
     java {
