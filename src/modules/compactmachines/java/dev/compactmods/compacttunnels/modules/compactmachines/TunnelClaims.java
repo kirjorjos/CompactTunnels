@@ -48,11 +48,9 @@ public final class TunnelClaims {
     }
 
     int used = 0;
-    for (Map.Entry<Direction, GlobalPos> entry : List.copyOf(claimed.entrySet())) {
+    for (Map.Entry<Direction, GlobalPos> entry : claimed.entrySet()) {
       if (stillClaimed(server, entry.getValue(), roomCode, entry.getKey())) {
         used++;
-      } else {
-        release(entry.getValue());
       }
     }
 

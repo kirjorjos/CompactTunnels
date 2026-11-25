@@ -31,3 +31,10 @@ type = "required"
 versionRange = "[0,)"
 ordering = "NONE"
 side = "BOTH"
+
+[[dependencies.compacttunnels]]
+modId = "jade"
+type = "optional"
+versionRange = "[15,)"
+ordering = "AFTER"
+side = "BOTH"

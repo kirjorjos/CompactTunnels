@@ -14,3 +14,9 @@
   - Direction depends on which way you scroll
 - Shift + left-click with an empty hand to pick up a tunnel
 - Creative middle-click grabs a blank tunnel, ctrl + middle-click copies its side data
+- Added Jade tooltip support
+  - Works from either end: a tunnel shows its machine face, a machine face shows its tunnel
+  - Shows the current face and how many sides are used
+  - Embeds the tunneled block's tooltip into the tunnel's tooltip
+  - Added config option to disable ghost block "hack" used for embedding the tooltip
+  - Shows if tunneled side is empty or unloaded

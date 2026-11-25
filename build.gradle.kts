@@ -10,6 +10,7 @@ val minecraftVersion = providers.gradleProperty("minecraft_version").get()
 val neoVersion = providers.gradleProperty("neo_version").get()
 val mekanismVersion = providers.gradleProperty("mekanism_version").get()
 val jeiVersion = providers.gradleProperty("jei_version").get()
+val jadeVersion = providers.gradleProperty("jade_version").get()
 
 group = "dev.compactmods.$modId"
 version = modVersion
@@ -101,6 +102,13 @@ repositories {
             includeGroup("net.mezzdev.config")
         }
     }
+
+    maven("https://api.modrinth.com/maven") {
+        name = "Modrinth"
+        content {
+            includeGroup("maven.modrinth")
+        }
+    }
 }
 
 val compactMachinesMod = fileTree("libs") { include("compactmachines*.jar") }
@@ -135,6 +143,16 @@ dependencies {
 
     runtimeOnly("mekanism:Mekanism:$mekanismVersion")
     runtimeOnly("mezz.jei:jei-1.21.1-neoforge:$jeiVersion")
+    compileOnly("maven.modrinth:jade:$jadeVersion")
+    runtimeOnly("maven.modrinth:jade:$jadeVersion")
+}
+
+modules.forEach { module ->
+    dependencies {
+        add(module.compileOnlyConfigurationName, compactMachinesMod)
+        add(module.compileOnlyConfigurationName, compactMachinesApi)
+        add(module.compileOnlyConfigurationName, "maven.modrinth:jade:$jadeVersion")
+    }
 }
 
 val compactMachinesVersion =
